@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VictoriaArchive
+    
+Exams- Épreuves</title>
+    <style>
+        /* Palette de couleurs Bleu Foncé */
+        :root {
+            --deep-bg: #010830; /* Fond bleu très foncé */
+            --card-bg: #00000d; /* Bleu ardoise pour les boutons */
+            --accent-blue: #020a24;
+            --white: #ffffff;
+            --text-secondary: #94a3b8;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--deep-bg); 
+            margin: 0; padding: 0; 
+            color: var(--white);
+            min-height: 100vh;
+        }
+
+        /* En-tête */
+        header {
+            background: rgba(2, 17, 85, 0.9);
+            padding: 50px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 3rem;
+            letter-spacing: 2px;
+            font-weight: 800;
+            color: var(--white);
+        }
+
+        .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+
+        .subtitle { 
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Grilles et Boutons très arrondis */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px; 
+        }
+
+        .card {
+            background: var(--card-bg); 
+            padding: 35px 20px;
+            border-radius: 25px; /* Très arrondi */
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600; 
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--white);
+            font-size: 1.1rem;
+        }
+
+        .card:hover { 
+            transform: scale(1.05);
+            background: var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Modale épurée */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; 
+            width: 100%; height: 100%; background: rgba(0,0,0,0.85);
+            justify-content: center; align-items: center; z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: var(--card-bg); 
+            padding: 40px; 
+            border-radius: 35px;
+            width: 80%; max-width: 350px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal h2 { margin-bottom: 25px; font-size: 1.5rem; }
+
+        .series-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal button {
+            padding: 18px;
+            border: none; 
+            border-radius: 20px;
+            background: var(--accent-blue); 
+            color: var(--white);
+            font-weight: bold; font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .cancel-link { 
+            display: block; margin-top: 20px; 
+            color: var(--text-secondary); cursor: pointer; 
+            text-decoration: none; font-size: 0.9rem;
+        }
+
+        /* Vues */
+        .view { display: none; }
+        .active { display: block; animation: fadeIn 0.4s ease-out; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-back {
+            margin-top: 50px; 
+            background: transparent; 
+            color: var(--text-secondary);
+            padding: 12px 25px;
+            border: 1px solid var(--text-secondary);
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { color: white; border-color: white; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Victoria Archives
+    </h1>
+</header>
+
+<div class="container">
+    
+    <div id="step-levels" class="view active">
+        <div class="subtitle">Choisissez votre classe</div>
+        <div class="grid">
+            <div class="card" onclick="startThird()">Troisième</div>
+            <div class="card" onclick="openSeries('Première')">Première</div>
+            <div class="card" onclick="openSeries('Terminale')">Terminale</div>
+        </div>
+    </div>
+
+    <div id="seriesModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Série ?</h2>
+            <div class="series-grid" id="seriesOptions">
+                </div>
+            <a class="cancel-link" onclick="closeModal()">Annuler</a>
+        </div>
+    </div>
+
+    <div id="step-subjects" class="view">
+        <div class="subtitle" id="currentPath">Matières</div>
+        <div id="subjectsGrid" class="grid"></div>
+        <button class="btn-back" onclick="goHome()">← Changer de niveau</button>
+    </div>
+</div>
+
+<script>
+    let selectedLevel = "";
+
+    const subjectsConfig = {
+        "3eme": ["Mathématiques", "Anglais", "Physique-Chimie", "SVT", "Français", "Informatique", "Espagnol", "Allemand", "Arabe"],
+        "Scientifique": ["Mathématiques", "Physique", "Chimie", "SVTEEHB", "Français", "Anglais", "Informatique", "Philosophie"],
+        "Litteraire": ["Philosophie", "Français", "Anglais", "Histoire-Géo", "Mathématiques", "Espagnol", "Allemand", "Arabe"]
+    };
+
+    function startThird() {
+        showSubjects("Troisième", "3eme");
+    }
+
+    function openSeries(level) {
+        selectedLevel = level;
+        document.getElementById('modalTitle').innerText = level + " : Série ?";
+        const options = document.getElementById('seriesOptions');
+        options.innerHTML = `
+            <button onclick="selectSeries('A')">Série A</button>
+            <button onclick="selectSeries('C')">Série C</button>
+            <button onclick="selectSeries('D')">Série D</button>
+        `;
+        document.getElementById('seriesModal').style.display = 'flex';
+    }
+
+    function selectSeries(series) {
+        closeModal();
+        let configKey = (series === 'A') ? "Litteraire" : "Scientifique";
+        showSubjects(`${selectedLevel} ${series}`, configKey);
+    }
+
+    function showSubjects(title, configKey) {
+        document.getElementById('step-levels').classList.remove('active');
+        document.getElementById('step-subjects').classList.add('active');
+        document.getElementById('currentPath').innerText = title;
+        
+        const grid = document.getElementById('subjectsGrid');
+        grid.innerHTML = "";
+        
+        subjectsConfig[configKey].forEach(sub => {
+            grid.innerHTML += `<div class="card" onclick="alert('Chargement : ${sub}')">${sub}</div>`;
+        });
+    }
+
+    function closeModal() {
+        document.getElementById('seriesModal').style.display = 'none';
+    }
+
+    function goHome() {
+        document.getElementById('step-subjects').classList.remove('active');
+        document.getElementById('step-levels').classList.add('active');
+    }
+</script>
+
+</body>
+</html>
